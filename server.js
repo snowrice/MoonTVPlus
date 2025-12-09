@@ -321,22 +321,27 @@ class WatchRoomServer {
       // 心跳
       socket.on('heartbeat', () => {
         const roomInfo = this.socketToRoom.get(socket.id);
-        if (!roomInfo) return;
 
-        const roomMembers = this.members.get(roomInfo.roomId);
-        const member = roomMembers?.get(roomInfo.userId);
-        if (member) {
-          member.lastHeartbeat = Date.now();
-          roomMembers?.set(roomInfo.userId, member);
-        }
+        // 如果用户在房间中，更新心跳时间
+        if (roomInfo) {
+          const roomMembers = this.members.get(roomInfo.roomId);
+          const member = roomMembers?.get(roomInfo.userId);
+          if (member) {
+            member.lastHeartbeat = Date.now();
+            roomMembers?.set(roomInfo.userId, member);
+          }
 
-        if (roomInfo.isOwner) {
-          const room = this.rooms.get(roomInfo.roomId);
-          if (room) {
-            room.lastOwnerHeartbeat = Date.now();
-            this.rooms.set(roomInfo.roomId, room);
+          if (roomInfo.isOwner) {
+            const room = this.rooms.get(roomInfo.roomId);
+            if (room) {
+              room.lastOwnerHeartbeat = Date.now();
+              this.rooms.set(roomInfo.roomId, room);
+            }
           }
         }
+
+        // 无论是否在房间中，都响应心跳包（pong）
+        socket.emit('heartbeat:pong', { timestamp: Date.now() });
       });
 
       // 断开连接

@@ -80,6 +80,7 @@ export interface ServerToClientEvents {
   'voice:mic-enabled': (data: { userId: string }) => void;
   'voice:audio-chunk': (data: { userId: string; audioData: number[]; sampleRate?: number }) => void;
   'state:cleared': () => void;
+  'heartbeat:pong': (data: { timestamp: number }) => void;
   'error': (message: string) => void;
 }
 

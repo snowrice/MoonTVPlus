@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Smile, Minimize2, Maximize2, Info, Users, LogOut, XCircle, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { MessageCircle, X, Send, Smile, Minimize2, Maximize2, Info, Users, LogOut, XCircle, Mic, MicOff, Volume2, VolumeX, AlertCircle } from 'lucide-react';
 import { useWatchRoomContextSafe } from '@/components/WatchRoomProvider';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 
@@ -25,6 +25,7 @@ export default function ChatFloatingWindow() {
   // 语音聊天状态
   const [isMicEnabled, setIsMicEnabled] = useState(false);
   const [isSpeakerEnabled, setIsSpeakerEnabled] = useState(true);
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   // 使用语音聊天hook
   const voiceChat = useVoiceChat({
@@ -95,8 +96,43 @@ export default function ChatFloatingWindow() {
     }
   }, [isOpen, isMinimized]);
 
-  // 如果没有加入房间，不显示聊天按钮
+  // 处理手动重连
+  const handleReconnect = async () => {
+    if (!watchRoom?.manualReconnect) return;
+
+    setIsReconnecting(true);
+    try {
+      await watchRoom.manualReconnect();
+    } catch (error) {
+      console.error('[ChatFloatingWindow] Reconnect failed:', error);
+    } finally {
+      setIsReconnecting(false);
+    }
+  };
+
+  // 如果没有加入房间，只显示重连按钮（如果需要）
   if (!watchRoom?.currentRoom) {
+    // 重连失败时显示重连按钮
+    if (watchRoom?.reconnectFailed) {
+      return (
+        <div className="fixed bottom-20 right-4 z-[700] flex flex-col gap-3 md:bottom-4">
+          <button
+            onClick={handleReconnect}
+            disabled={isReconnecting}
+            className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-red-500 text-white shadow-2xl transition-all hover:scale-110 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed animate-pulse"
+            aria-label="连接失败，点击重连"
+            title="连接失败，点击重连"
+          >
+            <AlertCircle className="h-6 w-6" />
+            {isReconnecting && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-white border-t-transparent"></div>
+              </div>
+            )}
+          </button>
+        </div>
+      );
+    }
     return null;
   }
 
@@ -141,6 +177,24 @@ export default function ChatFloatingWindow() {
   if (!isOpen && !showRoomInfo) {
     return (
       <div className="fixed bottom-20 right-4 z-[700] flex flex-col gap-3 md:bottom-4">
+        {/* 重连失败提示气泡 */}
+        {watchRoom?.reconnectFailed && (
+          <button
+            onClick={handleReconnect}
+            disabled={isReconnecting}
+            className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-red-500 text-white shadow-2xl transition-all hover:scale-110 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed animate-pulse"
+            aria-label="连接失败，点击重连"
+            title="连接失败，点击重连"
+          >
+            <AlertCircle className="h-6 w-6" />
+            {isReconnecting && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-white border-t-transparent"></div>
+              </div>
+            )}
+          </button>
+        )}
+
         {/* 房间信息按钮 */}
         <button
           onClick={() => setShowRoomInfo(true)}
@@ -300,6 +354,24 @@ export default function ChatFloatingWindow() {
   if (isMinimized) {
     return (
       <>
+        {/* 重连失败提示气泡 */}
+        {watchRoom?.reconnectFailed && (
+          <button
+            onClick={handleReconnect}
+            disabled={isReconnecting}
+            className="fixed bottom-[13.5rem] right-4 z-[700] group relative flex h-12 w-12 items-center justify-center rounded-full bg-red-500 text-white shadow-2xl transition-all hover:scale-110 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed animate-pulse md:bottom-[11rem]"
+            aria-label="连接失败，点击重连"
+            title="连接失败，点击重连"
+          >
+            <AlertCircle className="h-5 w-5" />
+            {isReconnecting && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-white border-t-transparent"></div>
+              </div>
+            )}
+          </button>
+        )}
+
         {/* 房间信息按钮 */}
         <button
           onClick={() => setShowRoomInfo(true)}
@@ -335,6 +407,24 @@ export default function ChatFloatingWindow() {
   // 完整聊天窗口
   return (
     <>
+      {/* 重连失败提示气泡 */}
+      {watchRoom?.reconnectFailed && (
+        <button
+          onClick={handleReconnect}
+          disabled={isReconnecting}
+          className="fixed bottom-[32.5rem] right-4 z-[700] group relative flex h-12 w-12 items-center justify-center rounded-full bg-red-500 text-white shadow-2xl transition-all hover:scale-110 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed animate-pulse md:bottom-[30rem]"
+          aria-label="连接失败，点击重连"
+          title="连接失败，点击重连"
+        >
+          <AlertCircle className="h-5 w-5" />
+          {isReconnecting && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-white border-t-transparent"></div>
+            </div>
+          )}
+        </button>
+      )}
+
       {/* 房间信息按钮 */}
       <button
         onClick={() => setShowRoomInfo(true)}
